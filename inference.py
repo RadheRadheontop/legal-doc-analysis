@@ -227,6 +227,8 @@ def run_llm_agent(
 ) -> Dict[str, Any]:
     """Run the LLM agent on a single task. Returns dict with success, steps, rewards list."""
 
+    print(f"[START] task={task_id} env=lexcrisis model={model}")
+
     reset_data = env.reset(task_id)
     obs = reset_data.get("observation", reset_data)
 
@@ -350,10 +352,10 @@ def main() -> None:
             result = run_llm_agent(llm_client, env_client, task_id, MODEL_NAME)
             rewards_str = ",".join(f"{r:.2f}" for r in result["rewards"])
             print(
-                f"[END] success={str(result['success']).lower()} steps={result['steps']} rewards=[{rewards_str}]"
+                f"[END] success={str(result['success']).lower()} steps={result['steps']} rewards={rewards_str}"
             )
         except Exception as e:
-            print(f"[END] success=false steps=0 rewards=[0.00]")
+            print("[END] success=false steps=0 rewards=0.00")
 
 
 if __name__ == "__main__":
