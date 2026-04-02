@@ -216,7 +216,7 @@ Do not hardcode secrets in the repo.
 These are filled from the deterministic reference runner:
 
 - `task_1`: `0.5400`
-- `task_2`: `0.4464`
+- `task_2`: `0.8438`
 - `task_3`: `0.9150`
 
 ## Project Layout
@@ -226,7 +226,6 @@ lexcrisis/
 ├── Dockerfile
 ├── openenv.yaml
 ├── inference.py
-├── lexcrisis.py
 ├── main.py
 ├── README.md
 ├── requirements.txt

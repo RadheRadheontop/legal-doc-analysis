@@ -14,7 +14,7 @@ dependencies = [
 ]
 
 [project.scripts]
-server = "main:main"
+server = "main:app"
 
 [tool.setuptools]
 packages = ["lexcrisis_env", "my_env", "server"]

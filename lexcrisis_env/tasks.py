@@ -461,6 +461,7 @@ SCRIPTED_BASELINES: Dict[str, List[Dict[str, Any]]] = {
         {"action_type": "submit_intake", "parameters": {}},
     ],
     "task_2": [
+        # DOC-001: attorney-client, withhold
         {"action_type": "review_document", "parameters": {"doc_id": "DOC-001"}},
         {
             "action_type": "classify_privilege",
@@ -470,10 +471,52 @@ SCRIPTED_BASELINES: Dict[str, List[Dict[str, Any]]] = {
                 "doctrine": "IEA Section 126",
             },
         },
+        {"action_type": "recommend_action", "parameters": {"doc_id": "DOC-001", "action": "withhold"}},
+        # DOC-002: work_product, withhold
+        {"action_type": "review_document", "parameters": {"doc_id": "DOC-002"}},
         {
-            "action_type": "recommend_action",
-            "parameters": {"doc_id": "DOC-001", "action": "withhold"},
+            "action_type": "classify_privilege",
+            "parameters": {
+                "doc_id": "DOC-002",
+                "classification": "work_product",
+                "doctrine": "IEA Section 129",
+            },
         },
+        {"action_type": "recommend_action", "parameters": {"doc_id": "DOC-002", "action": "withhold"}},
+        # DOC-003: both, withhold
+        {"action_type": "review_document", "parameters": {"doc_id": "DOC-003"}},
+        {
+            "action_type": "classify_privilege",
+            "parameters": {
+                "doc_id": "DOC-003",
+                "classification": "both",
+                "doctrine": "IEA Sections 126 and 129",
+            },
+        },
+        {"action_type": "recommend_action", "parameters": {"doc_id": "DOC-003", "action": "withhold"}},
+        # DOC-004: none, produce
+        {"action_type": "review_document", "parameters": {"doc_id": "DOC-004"}},
+        {
+            "action_type": "classify_privilege",
+            "parameters": {
+                "doc_id": "DOC-004",
+                "classification": "none",
+                "doctrine": "",
+            },
+        },
+        {"action_type": "recommend_action", "parameters": {"doc_id": "DOC-004", "action": "produce"}},
+        # DOC-005: work_product, withhold
+        {"action_type": "review_document", "parameters": {"doc_id": "DOC-005"}},
+        {
+            "action_type": "classify_privilege",
+            "parameters": {
+                "doc_id": "DOC-005",
+                "classification": "work_product",
+                "doctrine": "IEA Section 129",
+            },
+        },
+        {"action_type": "recommend_action", "parameters": {"doc_id": "DOC-005", "action": "withhold"}},
+        # DOC-006: waived / crime-fraud, produce
         {"action_type": "review_document", "parameters": {"doc_id": "DOC-006"}},
         {
             "action_type": "classify_privilege",
@@ -488,7 +531,7 @@ SCRIPTED_BASELINES: Dict[str, List[Dict[str, Any]]] = {
             "parameters": {
                 "doc_id": "DOC-006",
                 "waiver_type": "crime_fraud",
-                "explanation": "Illegal-purpose communication is not protected.",
+                "explanation": "Instruction to destroy evidence before a preservation order is an illegal-purpose communication not protected by privilege.",
             },
         },
         {
@@ -496,22 +539,48 @@ SCRIPTED_BASELINES: Dict[str, List[Dict[str, Any]]] = {
             "parameters": {
                 "doc_id": "DOC-006",
                 "exception_type": "crime_fraud",
-                "explanation": "Instruction to destroy evidence triggers the exception.",
+                "explanation": "Instruction to destroy evidence triggers the crime-fraud exception under IEA.",
             },
         },
-        {
-            "action_type": "recommend_action",
-            "parameters": {"doc_id": "DOC-006", "action": "produce"},
-        },
+        {"action_type": "recommend_action", "parameters": {"doc_id": "DOC-006", "action": "produce"}},
+        # DOC-007: waived / at-issue, produce
         {"action_type": "review_document", "parameters": {"doc_id": "DOC-007"}},
+        {
+            "action_type": "classify_privilege",
+            "parameters": {
+                "doc_id": "DOC-007",
+                "classification": "waived",
+                "doctrine": "At-issue waiver",
+            },
+        },
         {
             "action_type": "identify_waiver",
             "parameters": {
                 "doc_id": "DOC-007",
                 "waiver_type": "at_issue",
-                "explanation": "The draft quotes legal advice for public deployment.",
+                "explanation": "Quoting counsel's legal conclusions in a public press release waives privilege by putting advice at issue.",
             },
         },
+        {
+            "action_type": "identify_exception",
+            "parameters": {
+                "doc_id": "DOC-007",
+                "exception_type": "at_issue",
+                "explanation": "Counsel's conclusion quoted publicly puts legal advice directly at issue.",
+            },
+        },
+        {"action_type": "recommend_action", "parameters": {"doc_id": "DOC-007", "action": "produce"}},
+        # DOC-008: none, produce
+        {"action_type": "review_document", "parameters": {"doc_id": "DOC-008"}},
+        {
+            "action_type": "classify_privilege",
+            "parameters": {
+                "doc_id": "DOC-008",
+                "classification": "none",
+                "doctrine": "",
+            },
+        },
+        {"action_type": "recommend_action", "parameters": {"doc_id": "DOC-008", "action": "produce"}},
         {"action_type": "submit_review", "parameters": {}},
     ],
     "task_3": [
