@@ -3,8 +3,12 @@
 from __future__ import annotations
 
 import copy
+from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 from uuid import uuid4
+
+from openenv.core.env_server import Environment
+from openenv.core.env_server.types import EnvironmentMetadata
 
 from lexcrisis_env.graders import GROUND_TRUTH, GRADERS
 from lexcrisis_env.models import (
@@ -37,8 +41,8 @@ BENCHMARK_NAME = "lexcrisis"
 BENCHMARK_VERSION = "1.0.0"
 
 
-class LexCrisisEnvironment:
-    """Stateful legal-ops environment for litigation incident response."""
+class LexCrisisEngine:
+    """Stateful legal-ops engine for litigation incident response."""
 
     def __init__(self) -> None:
         self._episode_id = str(uuid4())
@@ -152,8 +156,11 @@ class LexCrisisEnvironment:
     def state(self) -> EnvironmentState:
         """Return the exact state contract requested in the prompt."""
 
+        observation = self._build_observation()
         return EnvironmentState(
-            observation=self._build_observation(),
+            episode_id=self._episode_id,
+            step_count=self._step_count,
+            observation=observation.model_dump(exclude={"reward", "done", "metadata"}),
             reward=self._last_reward,
             done=self._done,
         )
@@ -283,6 +290,9 @@ class LexCrisisEnvironment:
             max_steps=definition.max_steps,
             active_deadlines=active_deadlines,
             ethical_alerts=list(self._ethical_alerts),
+            done=self._done,
+            reward=self._last_reward,
+            metadata=self._info_payload(),
         )
 
     def _info_payload(self) -> Dict[str, Any]:
@@ -683,3 +693,70 @@ class LexCrisisEnvironment:
     def _noop(self, action: Action) -> Tuple[float, float, str]:
         del action
         return 0.0, 0.0, "No action taken."
+
+
+_ENGINE = LexCrisisEngine()
+
+
+class LexCrisisEnvironment(Environment[Action, Observation, EnvironmentState]):
+    """OpenEnv-compatible wrapper around the shared LexCrisis engine."""
+
+    SUPPORTS_CONCURRENT_SESSIONS = False
+
+    def __init__(self) -> None:
+        super().__init__()
+
+    def reset(
+        self,
+        seed: Optional[int] = None,
+        episode_id: Optional[str] = None,
+        task_id: Optional[str] = None,
+        **kwargs: Any,
+    ) -> Observation:
+        del kwargs
+        return _ENGINE.reset(task_id=task_id, seed=seed, episode_id=episode_id)
+
+    def step(
+        self,
+        action: Action,
+        timeout_s: Optional[float] = None,
+        **kwargs: Any,
+    ) -> Observation:
+        del timeout_s, kwargs
+        observation, _, _, _ = _ENGINE.step(action)
+        return observation
+
+    @property
+    def state(self) -> EnvironmentState:
+        return _ENGINE.state()
+
+    @property
+    def last_score(self) -> float:
+        return _ENGINE.last_score
+
+    @property
+    def episode_id(self) -> str:
+        return _ENGINE.episode_id
+
+    def episode_info(self) -> Dict[str, Any]:
+        return _ENGINE.episode_info()
+
+    def get_metadata(self) -> EnvironmentMetadata:
+        readme_path = Path(__file__).resolve().parents[1] / "README.md"
+        readme_content = None
+        if readme_path.exists():
+            readme_content = readme_path.read_text(encoding="utf-8")
+        return EnvironmentMetadata(
+            name="LexCrisis",
+            description=(
+                "Law-focused benchmark for legal operations incident response in "
+                "high-stakes product-liability litigation."
+            ),
+            readme_content=readme_content,
+            version=BENCHMARK_VERSION,
+            author="OpenEnv Hackathon Submission",
+        )
+
+    def close(self) -> None:
+        """Environment instances are stateless wrappers over the shared engine."""
+        return None

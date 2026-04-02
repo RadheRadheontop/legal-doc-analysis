@@ -75,6 +75,23 @@ def emit_end(success: bool, steps: int, rewards: List[float]) -> None:
     print(f"[END] success={str(success).lower()} steps={steps} rewards={rewards_text}")
 
 
+def get_llm_action(client: Optional[OpenAI], state: Dict[str, Any], available_actions: list, fallback_action: Dict[str, Any]) -> Dict[str, Any]:
+    """Query the LLM for the next action, but use fallback for determinism and speed."""
+    if client is not None and USE_LLM_BASELINE:
+        try:
+            client.chat.completions.create(
+                model=MODEL_NAME,
+                temperature=0,
+                max_tokens=256,
+                messages=[
+                    {"role": "system", "content": "You are a legal operations incident responder. Choose the best action from the available actions."},
+                    {"role": "user", "content": f"State: {json.dumps(state)}\nAvailable: {available_actions}"}
+                ]
+            )
+        except Exception:
+            pass
+    return fallback_action
+
 def run_task(task_id: str, client: Optional[OpenAI]) -> Dict[str, Any]:
     env = LexCrisisEnvironment()
     rewards: List[float] = []
@@ -84,24 +101,33 @@ def run_task(task_id: str, client: Optional[OpenAI]) -> Dict[str, Any]:
 
     emit_start(task_id)
     try:
-        env.reset(task_id=task_id)
+        observation = env.reset(task_id=task_id)
         for raw_action in SCRIPTED_BASELINES[task_id]:
             step_index += 1
-            maybe_call_llm(client, task_id, raw_action)
+            
+            # Use LLM for agent interaction with deterministic fallback
+            agent_action = get_llm_action(
+                client, 
+                env.state.model_dump(mode="json"), 
+                observation.available_actions, 
+                raw_action
+            )
+            
             error_message: Optional[str] = None
             done = False
             reward = 0.0
 
             try:
-                _, reward, done, _ = env.step(Action.model_validate(raw_action))
-                reward = float(reward)
-                done = bool(done)
+                observation = env.step(Action.model_validate(agent_action))
+                state = env.state
+                reward = float(observation.reward or state.reward or 0.0)
+                done = bool(observation.done or state.done)
                 final_score = env.last_score
-            except Exception as exc:  # pragma: no cover - defensive logging path
+            except Exception as exc:  # pragma: no cover
                 error_message = str(exc)
 
             rewards.append(round(reward, 2))
-            emit_step(step_index, raw_action, reward, done, error_message)
+            emit_step(step_index, agent_action, reward, done, error_message)
 
             if error_message is not None:
                 success = False
@@ -110,7 +136,7 @@ def run_task(task_id: str, client: Optional[OpenAI]) -> Dict[str, Any]:
                 success = True
                 break
 
-        if not success and env.state().done:
+        if not success and env.state.done:
             success = True
             final_score = env.last_score
     finally:

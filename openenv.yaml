@@ -2,7 +2,7 @@ spec_version: 1
 name: lexcrisis
 type: space
 runtime: fastapi
-app: server.app:app
+app: main:app
 port: 7860
 version: "1.0.0"
 description: >

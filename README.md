@@ -4,6 +4,7 @@ emoji: ⚖️
 colorFrom: gray
 colorTo: blue
 sdk: docker
+app_port: 7860
 pinned: false
 tags:
   - openenv
@@ -130,7 +131,7 @@ All graders are deterministic and bounded in `[0.0, 1.0]`.
 
 ```bash
 pip install -r requirements.txt
-uvicorn server.app:app --host 0.0.0.0 --port 7860
+uvicorn main:app --host 0.0.0.0 --port 7860
 ```
 
 Then open `http://127.0.0.1:7860`.
@@ -226,10 +227,17 @@ lexcrisis/
 ├── openenv.yaml
 ├── inference.py
 ├── lexcrisis.py
+├── main.py
 ├── README.md
 ├── requirements.txt
 ├── pyproject.toml
 ├── uv.lock
+├── my_env/
+│   ├── __init__.py
+│   ├── env.py
+│   ├── tasks.py
+│   ├── graders.py
+│   └── models.py
 ├── server/
 │   ├── __init__.py
 │   ├── app.py

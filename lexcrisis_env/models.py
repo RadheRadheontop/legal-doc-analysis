@@ -5,6 +5,9 @@ from __future__ import annotations
 from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
+from openenv.core.env_server import Action as OpenEnvAction
+from openenv.core.env_server import Observation as OpenEnvObservation
+from openenv.core.env_server import State as OpenEnvState
 
 
 ActionType = Literal[
@@ -34,7 +37,7 @@ ActionType = Literal[
 Difficulty = Literal["easy", "medium", "hard"]
 
 
-class Action(BaseModel):
+class Action(OpenEnvAction):
     """Agent action accepted by the environment."""
 
     model_config = ConfigDict(extra="forbid")
@@ -80,7 +83,7 @@ class DeadlineSummary(BaseModel):
     consequence: str
 
 
-class Observation(BaseModel):
+class Observation(OpenEnvObservation):
     """Observation exposed to the agent after reset and each step."""
 
     model_config = ConfigDict(extra="forbid")
@@ -101,12 +104,12 @@ class Observation(BaseModel):
     ethical_alerts: List[str] = Field(default_factory=list)
 
 
-class EnvironmentState(BaseModel):
+class EnvironmentState(OpenEnvState):
     """State response required by the OpenEnv competition prompt."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
 
-    observation: Observation
+    observation: Dict[str, Any]
     reward: float = Field(description="Reward from the last step only.")
     done: bool
 
